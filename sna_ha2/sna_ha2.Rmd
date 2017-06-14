@@ -1,0 +1,371 @@
+---
+title: "Social Network Analysis <br/> Home Assignment 2"
+author: '{rashid ali}'
+date: "due date - 29.05.2017 23:59"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+---
+# Graph models. Centrality metrics
+Please send your reports to hse.ntwks@gmail.com with the subject of of the following structure:<br/>
+*[MAGOLEGO SNA 2017] {ali} {rashid} HA{2}*
+
+Late submission policy: -1 point per day
+
+Use this file as a template for your report.\
+Support your computations with figures and comments. Send ONLY .Rmd versions of your report with datasets for your social network. Anonymize your data if necessary.
+
+```{r, echo=FALSE}
+library(igraph)
+library(rgexf)
+library(ggplot2)
+library(R.matlab)
+library(xtable)
+```
+
+
+## Task 1. Your social network
+
+For the first task, you have to load your [vk.com](http://vk.com) network. Please follow the instructions posted on the course wiki or user [VK Application](vk.com/app3861133). For [FB](http://facebook.com) users try to use [NetVizz](http://thepoliticsofsystems.net/2010/03/netvizz-facebook-to-gephi/). If you did it correctly, you should have a GraphML file with your own network. Read it to R:
+
+```{r}
+## Put your code here
+vknet = read.gexf("vk-friends-2.gexf")
+vkfg <- gexf.to.igraph(vknet)
+#Hide origional names of vertices 
+gvc <- vcount(vkfg)
+gec <- ecount(vkfg)
+vkfg_adj_mat <- get.adjacency(vkfg)
+vkfg_adj_mat_names <- 1:gvc
+colnames(vkfg_adj_mat) <- vkfg_adj_mat_names
+row.names(vkfg_adj_mat) <- colnames(vkfg_adj_mat)
+vkfg <- graph.adjacency(vkfg_adj_mat, add.colnames = "T")
+
+
+```
+
+### 1. Degree distribution
+
+First, plot degree distribution of your network in log-log scales:
+
+```{r}
+## Put your code here
+vkfg_degree <- degree(vkfg)
+vkfg_degree <- vkfg_degree+1
+dmax <- max(vkfg_degree)
+dmin <- min(vkfg_degree)
+drange <- as.numeric(dmin:dmax)
+degree_dist <- degree.distribution(vkfg)[drange]
+
+pl_fit <- power.law.fit(vkfg_degree, xmin = NULL, implementation = "plfit")
+alpha <- pl_fit$alpha
+xmin <- pl_fit$xmin
+C <- (alpha-1)* xmin^(alpha-1)
+pldf <- function(x) return(C*x^(-alpha))
+plot(degree_dist, log = 'xy', main = "VK friends graph distribution", xlab = " node degree log", ylab = " Degree distribution log" )
+par(new = T)
+curve(pldf, from = dmin, to = dmax, log="xy", main = "", xlab = "", ylab = "", col = "red", axes = F, add = F)
+
+
+
+```
+
+Is there any correspondence between actual degree distribution of your network and the Power Law distribution? If not, explain why.
+
+*Put your comments here*
+
+Now, let's see how it would look if it was random. Produce Erdos-Renyi graph matching your real network (same number of nodes and same average degree). Compare it with your degree distribution.
+
+```{r}
+## Put your code here
+
+er_graph <- erdos.renyi.game(gvc, gec, type = "gnm")
+
+degree_dist_erg <- degree.distribution(er_graph)
+plot(degree_dist, log = "xy", main = " VK friend graph Vs Erdos-renyi graph", xlab = "Node Degree log", ylab = " Degree distribution log")
+par(new = T)
+plot(degree_dist_erg, log = "xy" ,main =" ", col= "red", axes = F)
+
+```
+
+*according to ks test, the pl_fit$ks.p= 0.9670 which is greater than 0.05, so there is good correspondece  between actual degree distribution and power law distrubution*
+
+### 2. Compute centrality metrics
+
+Compute for your network: 
+
+* degree centrality
+
+* closeness centrality
+
+* betweenness centrality
+
+* eigenvector centrality
+
+* Bonacich power centrality
+
+* Alpha centrality
+
+
+```{r}
+## Put your code here
+degcen <- centralization.degree(vkfg)
+
+closecen <- centralization.closeness(vkfg, mode="all")
+
+betcen <- centralization.betweenness (vkfg, directed = TRUE, nobigint = TRUE)
+
+ev_cen <- centralization.evcent (vkfg, directed = TRUE, scale = FALSE, options = igraph.arpack.default)
+
+
+degcen$centralization
+closecen$centralization
+betcen$centralization
+ev_cen$centralization
+
+
+
+```
+
+Output six plots corresponding to six centrality metrics you've computed: 
+
+* Use first names of your friends as node labels on the graph (you may hide this information if you wish -- change it by integer ID)
+* Keep the same layout of the network
+* Make node sizes and colours proportional to the respective centrality metrics
+
+Hint: If you get stuck, lab 4 script might be helpful.
+
+```{r fig.width = 10, fig.height = 10 }
+## Put your code here
+deg<-degree(vkfg)
+lay <- layout.fruchterman.reingold(vkfg)
+fine = 500
+palette2 <- colorRampPalette(c('blue','red'))
+degCol <- palette2(fine)[as.numeric(cut(deg,breaks = fine))]
+vert_size <- ifelse(deg>30, 1/30*deg, 1)
+par(mfrow=c(1,1))
+plot(vkfg, layout=lay, vertex.color=degCol, vertex.size=vert_size*5, vertex.label=NA, edge.width = 0.5, edge.arrow.size = 0.5, main="Degree centrality")
+
+
+```
+
+```{r}
+clos <- closeness(vkfg)
+closCol = palette2(fine)[as.numeric(cut(clos,breaks = fine))]
+plot(vkfg,layout = lay, vertex.label=NA, vertex.color=closCol, vertex.size=clos*23000, edge.width = 0.5, edge.arrow.size = 0.5, main="Closeness centrality")
+
+```
+
+```{r}
+betw <- betweenness(vkfg)
+betwCol = palette2(fine)[as.numeric(cut(betw,breaks = fine))]
+vert_size <- ifelse(betw>210, 1/210*betw, 1)
+plot(vkfg,layout = lay, vertex.color=betwCol, vertex.size=vert_size*15, vertex.label=NA, edge.width = 0.5, edge.arrow.size = 0.5, main="Betwenness centrality")
+
+```
+
+```{r}
+ev <- evcent(vkfg)$vector
+evCol = palette2(fine)[as.numeric(cut(ev,breaks = fine))]
+vert_size <- ifelse(ev>0.15, 5*ev, 0.8)
+plot(vkfg,layout = lay, vertex.size=vert_size*10, vertex.color=evCol, vertex.label=NA, edge.width = 0.5, edge.arrow.size = 0.5, main="Eigenvector centrality")
+
+
+```
+
+
+
+```{r}
+# I got some errors while calculating alpha and bonacich centrality when using vk-friends.gexf-2. So, I tired a new social graph for alpha and bonacich centrality 
+vknet2 = read.gexf("vk-friends.gexf")
+vkfg2 <- gexf.to.igraph(vknet2)
+#Hide origional names of vertices 
+gvc2 <- vcount(vkfg2)
+gec2 <- ecount(vkfg2)
+vkfg_adj_mat2 <- get.adjacency(vkfg2)
+vkfg_adj_mat_names2 <- 1:gvc2
+colnames(vkfg_adj_mat2) <- vkfg_adj_mat_names2
+row.names(vkfg_adj_mat2) <- colnames(vkfg_adj_mat2)
+vkfg2 <- graph.adjacency(vkfg_adj_mat2, add.colnames = "T")
+
+```
+
+
+
+
+```{r}
+
+bon_cen <- bonpow(vkfg2)
+
+evCol = palette2(fine)[as.numeric(cut(bon_cen,breaks = fine))]
+vert_size <- ifelse(bon_cen>0.15, 5*ev, 0.8)
+plot(vkfg,layout = lay, vertex.size=vert_size*10, vertex.color=evCol, vertex.label=NA, edge.width = 0.5, edge.arrow.size = 0.5, main="Bonacich power centrality")
+
+```
+
+
+```{r}
+alpha_cen <- alpha.centrality(vkfg2)
+
+evCol = palette2(fine)[as.numeric(cut(alpha_cen,breaks = fine))]
+vert_size <- ifelse(alpha_cen>0.15, 5*ev, 0.8)
+plot(vkfg,layout = lay, vertex.size=vert_size*10, vertex.color=evCol, vertex.label=NA, edge.width = 0.5, edge.arrow.size = 0.5,
+     main=" alpha centrality")
+
+
+```
+
+Now, output top ten nodes in each ranking. Again, print only first names in your table to keep privacy:
+
+
+
+```{r}
+
+deg_cent_top10 <-sort(deg, decreasing = TRUE)[1:10]
+deg_cent_top10.mat = cbind(vkfg$v[deg_cent_top10] , deg_cent_top10)
+#colnames(g.deg.cent.top10.mat) = c("Node", "Degree Centrality")
+print(deg_cent_top10.mat)
+
+clos_cent_top10 <- sort(clos, decreasing = TRUE)[1:10]
+clos_cent_top10.mat = cbind(vkfg$v[clos_cent_top10] , clos_cent_top10)
+print(clos_cent_top10.mat)
+
+betcent<-sort(betw, decreasing = TRUE)[1:10]
+bet_cent_top10.mat = cbind(vkfg$v[betcent] , betcent)
+print(bet_cent_top10.mat)
+
+evcent <- sort(ev, decreasing = TRUE)[1:10]
+ev_cent_top10.mat = cbind(vkfg$v[evcent] , evcent)
+print(ev_cent_top10.mat)
+
+boncent<-sort(bon_cen, decreasing = TRUE)[1:10]
+boncent_top10.mat = cbind(vkfg$v[boncent] , boncent)
+print(boncent_top10.mat)
+
+alcent<-sort(alpha_cen, decreasing = TRUE)[1:10]
+al_cent_top10.mat = cbind(vkfg$v[alcent] , alcent)
+print(al_cent_top10.mat)
+```
+
+
+
+*Comment on your results here - for example, why some nodes have high betweenness centrality and the others have high closeness centrality. Is this what you would expect to see?*
+*Highest between is centrality is 14 which is expected because the red node in between centrality is a link between nodes on both sides but the values of closeness centrality is realitvely low* 
+
+
+## Task 2. Flickr network
+
+In the second task, you will work with a large directed graph. 
+
+Please download [flickr.mat](http://www.hse.ru/data/2015/05/01/1098247366/flickr.mat) 
+
+*Data contains sparse matrix A and list of user names. This is a denser part of the Flickr photo sharing site friendship graph from 2006. Edge direction corresponds to friendship requests (following). Some of the links are reciprocal, others not*
+
+It's a Matlab file. How to deal with it in R? There is a package `R.matlab`. Please install it and call `library(R.matlab)`
+
+Now use `readMat` function to read the file and extract adjacency matrix and a list of user names:
+
+```{r, eval=FALSE}
+flickr = readMat("flickr.mat")
+fmatrix=as.matrix(flickr[1]$A)
+fnames=flickr[2]$names
+```
+
+If you have trouble loading large mat file on your laptop --- try to use HSE computer classes with installed R+RStudio.
+
+Look at user names. You might want to remove spaces from the names. Use a function `gsub` to remove them:
+
+```{r, eval=FALSE}
+fnames=gsub(" ", "", fnames)
+```
+
+Now create a graph, output the number of vertices and edges:
+
+```{r}
+## Put your code here
+
+flicker_net<- graph.adjacency(fmatrix, mode = "directed", weighted = NULL)
+vcount(flicker_net)
+ecount(flicker_net)
+
+
+```
+
+Compute in- and out- degree centralities, PageRank, Hubs and Authorities for this network:
+
+```{r}
+## Put your code here
+
+deg_cen_i <-centralization.degree(flicker_net, mode = "in")$centralization
+#deg_cen_i
+deg_cen_o <-centralization.degree(flicker_net, mode = "out")$centralization
+#deg_cen_o
+flicker_pr <- page.rank(flicker_net)$vector
+#flicker_pr
+flicker_hub <- hub.score(flicker_net)$vector
+#flicker_hub
+flicker_auth <- authority.score(flicker_net)$vector
+
+
+
+
+```
+
+Print top ten names in each ranking:
+
+```{r}
+## Put your code here
+
+deg_in<-degree(flicker_net, mode = "in")
+top_in <- sort(deg_in, decreasing = TRUE)[1:10]
+fnames[which(deg_in %in% top_in)]
+
+deg_out=degree(flicker_net, mode = "out")
+top_out <- sort(deg_out, decreasing = TRUE)[1:10]
+fnames[which(deg_out %in% top_out)]
+
+top_pr <- sort(flicker_pr, decreasing = TRUE)[1:10]
+fnames[which(flicker_pr %in% top_pr)]
+
+top_hub <- sort(flicker_hub, decreasing = TRUE)[1:10]
+fnames[which(flicker_hub %in% top_hub)]
+
+top_auth <- sort(flicker_auth, decreasing = TRUE)[1:10]
+fnames[which(flicker_auth %in% top_auth)]
+
+
+
+```
+
+Produce the following plots:
+
+* In-degree centralities versus out-degree centralities
+
+* In-degree centralities versus authorities
+
+* Out-degree centralities versus hubs
+
+* Hubs versus authorities
+
+* PageRank versus hubs
+
+* PageRank versus authorities
+
+
+```{r}
+## Put your code here
+
+par(mfrow = c(3, 2)) 
+plot(deg_in, deg_out, col="green", xlab = "In degree", ylab = "Out degree")
+plot(deg_in, flicker_auth, col="green", xlab = "In degree", ylab = "Authority")
+plot(deg_out, flicker_hub, col="green", xlab = "Out degree", ylab = "Hubs")
+plot(flicker_hub, flicker_auth, col="green", xlab = "Hubs", ylab = "Authority")
+plot(flicker_pr, flicker_hub, col="green", xlab = "Page Rank", ylab = "Hubs")
+plot(flicker_pr, flicker_auth, col="green", xlab = "Page Rank", ylab = "Authority")
+
+
+```
+
+*For <in-degree, authority>, <out-degree, hub> and <pagerank, authority> pairs a positive correlation is revealed, as opposed to the rest of those being compared *

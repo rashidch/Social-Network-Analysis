@@ -1,0 +1,133 @@
+---
+title: "Social Network Analysis <br/> Home Assignment 3"
+author: '{rashid ali}'
+date: "due date - 05.06.2017 23:59"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+---
+# Network communities
+Please send your reports to hse.ntwks@gmail.com with the subject of of the following structure:<br/>
+*[MAGOLEGO SNA 2017] {ali} {rashid} HW{3}*
+
+Late submission policy: -1 point per day
+
+Use this file as a template for your report.\
+Support your computations with figures and comments. Send ONLY .Rmd versions of your report.
+
+```{r, echo=FALSE}
+library(igraph)
+```
+
+
+## Yahoo Music Network
+
+For this assignment, you have to load [the part of Yahoo Music Network](https://drive.google.com/file/d/0Bwd5a7NScgMtNElfOFdSbE1UYnM/view). Archive contains network in GML format and corresponding list of artists.
+
+```{r}
+## Put your code here
+
+yahoo_music_net <- read.graph("music2K.gml", format = "gml" )
+
+artists_names <- scan("artists.txt", what="", sep="\n")
+V(yahoo_music_net)$label = artists_names
+```
+
+Edges in this network appear if enough number of users have given ratings to both music bands. Note, that edges are weighted with similarity of the ratings.
+
+
+### 1. Preprocessing
+
+This network needs to be preprocessed. Do the steps, described on seminar, to make it look properly. How many vertices and edges were deleted?
+
+```{r}
+## Put your code here
+v1 <- vcount(yahoo_music_net)
+e1 <- ecount(yahoo_music_net)
+yahoo_music_net <- delete.vertices(yahoo_music_net, degree(yahoo_music_net) == 0)
+yahoo_music_net <- simplify(yahoo_music_net)
+v2 <- vcount(yahoo_music_net)
+e2 <- ecount(yahoo_music_net)
+
+v1 - v2
+e1 - e2
+```
+# 4 vertices and 0 edges are deleted
+
+### 2. Clustering
+
+Define clusters for this networks using one of the algorithms described on lectures and seminars:
+```{r}
+## Put your code here
+mc <- multilevel.community(yahoo_music_net,weights = NULL )
+```
+
+Compute density of obtained clusters:
+```{r}
+## Put your code here
+
+density_clusters <- 1: length(mc)
+inner_con <- 1:length(mc)
+
+for (j in 1: length(mc)){
+  subg <- induced.subgraph(yahoo_music_net, which(mc$membership==j))
+ inner_con[j] <- ecount(subg)
+ density_clusters[j] <- graph.density(yahoo_music_net)
+}
+density_clusters
+```
+
+Compute the ratio of inner clusters connections to outer ones:
+```{r}
+## Put your code here
+
+sum(inner_con)/ecount(yahoo_music_net)
+
+```
+
+
+### 3. Visualization & interpretation
+
+Visulize five of the most dense clusters. Use names of artists as node labels on the graph.
+```{r}
+## Put your code here
+index_max1 <- which.max(density_clusters)
+density_clusters[index_max1] <- 0
+index_max2 <- which.max(density_clusters)
+density_clusters[index_max2] <- 0
+index_max3 <- which.max(density_clusters)
+density_clusters[index_max3] <- 0
+index_max4 <- which.max(density_clusters)
+density_clusters[index_max4] <- 0
+index_max5 <- which.max(density_clusters)
+
+subgraph1 <- induced.subgraph(yahoo_music_net,which(mc$membership == index_max1))
+
+plot(subgraph1, layout= layout.circle )
+
+```
+
+```{r}
+subgraph2 <- induced.subgraph(yahoo_music_net,which(mc$membership == index_max2))
+plot(subgraph2, layout=layout.circle)
+```
+
+```{r}
+subgraph3 <- induced.subgraph(yahoo_music_net,which(mc$membership == index_max3))
+plot(subgraph3, layout=lay)
+```
+```{r}
+subgraph4 <- induced.subgraph(yahoo_music_net,which(mc$membership == index_max4))
+plot(subgraph4, layout=layout.circle)
+```
+
+```{r}
+subgraph5 <- induced.subgraph(yahoo_music_net,which(mc$membership == index_max5))
+plot(subgraph5, layout=layout.circle)
+```
+
+<b> (Extra task) </b>Try to interpret (using Wikipedia or other resources) obtained clusters.
+
+*THe clusters show the different type of music grouped in different clusters*
