@@ -1,0 +1,162 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(igraph)
+```
+
+```{r}
+g<-graph.empty(n=10, directed=TRUE)
+
+```
+
+```{r}
+plot.igraph(g)
+```
+
+```{r}
+g1<-graph.full(n=10, directed =FALSE, loops = FALSE)
+```
+
+
+```{r}
+
+vcount(g1)
+ecount(g1)
+```
+
+```{r}
+neighbors(g1,7, mode = "out")
+```
+
+```{r}
+incident(g1, 7, mode = "all")
+```
+```{r}
+is.directed(g1) 
+```
+
+```{r}
+are.connected(g1, 1, 2)
+```
+
+```{r}
+get.edgelist(g1)
+
+```
+
+```{r}
+V(g1)
+```
+```{r}
+E(g1)
+```
+```{r}
+add.vertices(g1, vertex(11,12))
+
+```
+
+
+```{r}
+plot.igraph(g1)
+```
+
+```{r}
+g2<-graph.star(n=10, mode="out") 
+```
+
+```{r}
+plot.igraph(g2)
+```
+
+```{r}
+g3<-graph.star(n=10, mode="in")
+```
+
+```{r}
+plot.igraph(g3)
+```
+
+```{r}
+g4<-graph.ring(n=10)
+```
+
+```{r}
+plot.igraph(g4)
+```
+
+```{r}
+edges <- c(1,2, 3,2, 2,4)
+g5<-graph(edges, n=max(edges), directed=TRUE)
+```
+
+```{r}
+plot.igraph(g5)
+```
+
+```{r}
+n <-sample(5:10,1)
+g11 <- graph.ring(n)
+```
+
+```{r}
+vcount(g11)
+ecount(g11)
+```
+```{r}
+plot(g11, layout = layout.fruchterman.reingold,vertex.label=V(g)$number,
+edge.arrow.size=1)
+```
+```{r}
+g12 <- graph.empty(n=5, directed = FALSE)
+new_edges <- c(1,3,1,5,2,5,4,5)
+
+g12 <- add.edges(g12, new_edges)
+```
+
+
+```{r}
+plot.igraph(g12)
+```
+
+```{r}
+g12 <- add.vertices(g12,1)
+```
+
+```{r}
+g12<- add.edges(g12, c(5,6))
+```
+
+```{r}
+plot.igraph(g12)
+```
+
+```{r}
+
+V(g12)$name <- letters[1:vcount(g)]
+
+
+```
+
+```{r}
+E(g12)$weight <- runif(ecount(g))
+```
+
+```{r}
+plot(g12, layout =layout.fruchterman.reingold,vertex.label=V(g)$number)
+```
+
+```{r}
+get.adjacency(g12, attr = "weight")
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
