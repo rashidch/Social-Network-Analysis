@@ -1,5 +1,5 @@
 # Social-Network-Analysis 
-#Topics Learned
+# Topics Learned
 1. Introduction to network science
 2. Power laws
 3. Random graphs
